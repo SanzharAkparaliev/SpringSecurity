@@ -1,9 +1,11 @@
 package com.example.springsecurity.security;
 
+import com.example.springsecurity.auth.ApplicationUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -17,7 +19,6 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 import java.util.concurrent.TimeUnit;
 
-import static com.example.springsecurity.security.ApplicationUserPermission.COURSE_WRITE;
 import static com.example.springsecurity.security.ApplicationUserRole.ADMIN;
 import static com.example.springsecurity.security.ApplicationUserRole.STUDENT;
 
@@ -28,6 +29,9 @@ import static com.example.springsecurity.security.ApplicationUserRole.STUDENT;
 public class ApplicationSecurityConfig extends WebSecurityConfigurerAdapter {
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private ApplicationUserService applicationUserService;
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http
@@ -59,23 +63,17 @@ public class ApplicationSecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Override
-    @Bean
-    protected UserDetailsService userDetailsService() {
-        UserDetails annaSmithUser = User.builder()
-                .username("annasmith")
-                .password(passwordEncoder.encode("password"))
-//                .roles(STUDENT.name())
-                .authorities(STUDENT.getGrantedAuthorities())
-                .build();
-        UserDetails lindaUser = User.builder()
-                .username("linda")
-                .password(passwordEncoder.encode("password"))
-//                .roles(ADMIN.name())
-                .authorities(ADMIN.getGrantedAuthorities())
-                .build();
-        return new InMemoryUserDetailsManager(
-                annaSmithUser,
-                lindaUser
-        );
+    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+        auth.authenticationProvider(daoAuthenticationProvider());
     }
+
+    @Bean
+    public DaoAuthenticationProvider daoAuthenticationProvider(){
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        provider.setPasswordEncoder(passwordEncoder);
+        provider.setUserDetailsService(applicationUserService);
+        return provider
+    }
+
+
 }
