@@ -20,16 +20,22 @@ import java.time.LocalDate;
 import java.util.Date;
 
 public class JwtUsernameAndPasswordAuthenticationFilter  extends UsernamePasswordAuthenticationFilter {
-    @Autowired
-    private AuthenticationManager authenticationManager;
+
+    private final AuthenticationManager authenticationManager;
+
+    public JwtUsernameAndPasswordAuthenticationFilter(AuthenticationManager authenticationManager) {
+    this.authenticationManager = authenticationManager;
+    }
+
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request,
                                                 HttpServletResponse response) throws AuthenticationException {
         try {
-            UsernamePasswordAuthenticationFilter authenticationRequest = new ObjectMapper().readValue(request.getInputStream(), UsernamePasswordAuthenticationFilter.class);
+            UsernameAndPasswordAuthenticationRequest authenticationRequest = new ObjectMapper()
+                    .readValue(request.getInputStream(), UsernameAndPasswordAuthenticationRequest.class);
             Authentication authentication = new UsernamePasswordAuthenticationToken(
-                     authenticationRequest.getUsernameParameter(),
-                     authenticationRequest.getPasswordParameter()
+                     authenticationRequest.getUsername(),
+                     authenticationRequest.getPassword()
             );
             Authentication authenticate = authenticationManager.authenticate(authentication);
             return authenticate;
